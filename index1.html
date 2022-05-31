@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
+<title>
+    Flow_Chart_creater
+</title>
+<style>
+     table{
+         border:1px solid black ;
+         background-color: grey;
+         cursor:pointer;
+     }
+      select{
+          height:30px;
+          width:169px;
+      }
+      img{
+          height:22px;
+          width:15px
+      }
+</style>
+</head>
+<body class="container-fluid">
+<div class="text-center">
+<button id="add_node">Add Start Node</button>
+<button id="add_row">Add Row to Selected Node</button>
+</div>
+<br>
+<div id="tables" class="row" >
+</div>
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+    let detections=["Furnace_tilt","Pyrometer","Spectrometer","Ladle","Slag_removal","Vibro_charger","Carbon","None","Time_out"];
+    let process_nodes=["start_node","tapping1_node","melting_node","idle_node","tapping2_node","holding_node","go_back","charging_node","none","stay","sack_node","vibro_node","slag_node","return_metal_charging_node","spectro_node","temp_node"];
+    const node_name="";
+    var selected_table;
+    var s=``,r=``;
+    var node_connections={};
+    var node_rows={};
+    for(k=0;k<detections.length;k++)
+    {
+        s+=`<option value="`+detections[k]+`">`+detections[k]+`</option>`;
+    }
+    for(k=0;k<process_nodes.length;k++)
+    {
+        r+=`<option value="`+process_nodes[k]+`">`+process_nodes[k]+`</option>`;
+    }
+    for(k=0;k<process_nodes.length;k++)
+    {
+        node_connections[process_nodes[k]]=0;
+        node_rows[process_nodes[k]]=0;
+    }
+    function selected_add_node(count1,row1)
+    {
+            var node_name1=$('#nodet'+count1+'r'+row1+' :selected').text();
+            if (node_connections[node_name1]==0)
+                {addnodetohtml(node_name1);}
+                node_connections[node_name1]++;
+    }
+function addnodetohtml(node_name)
+{
+    var html_content = `
+    <table class=" col-auto m-2 h-50" id="table${node_name}" onclick=add_border("${node_name}")>  <caption class="text-center"></caption>
+        <tr><td style="text-align: center; vertical-align: middle;"><input id="node_name${node_name}" class="text-center" type="text" value="${node_name}" readonly></td></tr>
+        <tr><td><select id="processt${node_name}r${node_rows[node_name]}">
+            <option value="">Select Detection</option>`+s
+            +`
+        </select>
+        <select id="nodet${node_name}r${node_rows[node_name]}" onchange=selected_add_node("${node_name}",${node_rows[node_name]})>
+                <option value="">Select Process Node</option>`+r+`
+        </select>
+        <img src="cross.png" onclick=delete_row("${node_name}",${node_rows[node_name]})  class="img-fluid">
+    </td></tr>`
+
+$("#tables").append(html_content);
+    
+    var previous;
+    $("#nodet"+node_name+'r'+node_rows[node_name]).change(function() {
+        // Do something with the previous value after the change
+        if(previous!="")
+        {
+            node_connections[previous]--;
+            if(node_connections[previous]==0)
+            {
+                delete_table(previous);
+                node_rows[previous]=0;
+            }
+        // Make sure the previous value is updated
+            previous = this.value;
+        }
+        
+    });
+    node_rows[node_name]++;
+    
+}
+$("#add_node").on('click',function(){
+    if (node_connections["start_node"]==0)
+    {addnodetohtml("start_node");
+    node_connections["start_node"]++;
+    }
+}
+);
+
+function add_border(count1)
+{
+    for(let i in node_connections)
+    {
+        $('#table'+i).css({"border-color":"#000","border-width":"1px"});    
+    }
+    $('#table'+count1).css({"border-color":"#0ff","border-width":".25em"});
+    selected_table=count1;
+}
+function delete_table(tableId){
+    var no_of_row=node_rows[tableId];
+    node_connections[tableId]=0;
+    node_rows[tableId]=0;
+    var previous1;
+    for(i=0;i<no_of_row;i++)
+    {
+        previous1=$('#nodet'+tableId+'r'+i+' :selected').text();
+        node_connections[previous1]--;
+        if(previous1!="Select Process Node" && node_connections[previous1]<=0)
+        {
+            delete_table(previous1);
+        }
+    }
+    $('table').remove("#table"+tableId);
+}
+function delete_row(tableid,rowid){
+    var previous2=$('#nodet'+tableid+'r'+rowid+' :selected').text();
+    $("#table"+tableid+' tr:eq('+(rowid+1)
+    +')').remove();
+    node_connections[previous2]--;
+    node_rows[tableid]--;
+    if(node_connections[previous2]==0)
+    {
+        delete_table(previous2);
+    }
+    if(node_rows[tableid]==0)
+    {
+        $('table').remove("#table"+tableId);
+    }
+}
+/*console.log(count,">>>>>>>>>>>",'#node'+(count))
+$(document.body).on('change','#node'+(count),function() {
+console.log(count,">>>>>>>>>>>",'#node'+(count))
+
+    var temp_node=$('#node'+count).val();
+    alert(count);
+    addnodetohtml(temp_node);
+});*/
+
+    /*function addnode()
+    {
+        var table_div=document.getElementById("tables").innerHTML+=`
+        <table class=" col-auto m-2 h-50" id="table${count}">  <caption class="text-center">${node_name}</caption>
+            <tr><td style="text-align: center; vertical-align: middle;"><input class="text-center" type="text" value="${node_name}" readonly></td></tr>
+            <tr><td><select id="process">
+                <option value="">Select Process</option>
+                <option value="Furnace Tilt">Furnace Tilt</option>
+                <option value="Vibro Charger">Vibro Charger</option>
+                <option value="Slag">Slag</option>
+                <option value="Laddle">Laddle</option>
+            </select>
+            <select id="node">
+                <option value="">Select Node</option>
+                <option value="Furnace Tilt">Furnace Tilt</option>
+                <option value="Vibro Charger">Vibro Charger</option>
+                <option value="Slag">Slag</option>
+                <option value="Laddle">Laddle</option>
+            </select>
+        </td></tr></table>`;
+            arr[count]=2;
+            count+=1;
+    }*/
+    $("#add_row").on('click',function()
+    {
+            $("#table"+(selected_table)).append(`<tr><td><select id="processt${selected_table}r${node_rows[selected_table]}">
+                <option value="">Select Detection</option>`+s+`
+            </select>
+            <select id="nodet${selected_table}r${node_rows[selected_table]}" onchange=selected_add_node("${selected_table}",${node_rows[selected_table]})>
+                <option value="">Select Process Node</option>`+r+`
+            </select>
+            <img src="cross.png" class="img-fluid" onclick=delete_row("${selected_table}",${node_rows[selected_table]})>
+        </td></tr>`);
+        var previous;
+    $("#nodet"+selected_table+'r'+node_rows[selected_table]).change(function() {
+        // Do something with the previous value after the change
+        if(previous!="")
+        {
+            node_connections[previous]--;
+            if(node_connections[previous]==0)
+            {
+                delete_table(previous);
+                node_rows[previous]=0;
+            }
+        // Make sure the previous value is updated
+            previous = this.value;
+        }
+        
+    });
+
+
+        node_rows[selected_table]++;
+    });
+</script>
+</html>
